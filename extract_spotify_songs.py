@@ -1,4 +1,3 @@
-#%%
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import env
@@ -8,7 +7,6 @@ import random
 import requests
 from pydub import AudioSegment
 
-#%%
 scope = "user-library-read"
 
 sp = spotipy.Spotify(
@@ -17,14 +15,11 @@ sp = spotipy.Spotify(
                               redirect_uri=env.REDIRECT_URI,
                               scope=scope))
 
-#%%
 # stores playlist song names, track artist, track ID and preview url into a list of dictionaries
-# optional max parameter will limit playlist size based on songs with a preview url
-def get_playlist_info(playlist_id, max=float('inf')):
+def get_playlist_info(playlist_id):
     playlist_info = []
-    offset = 0
-    counter = 0
-    playlist = sp.playlist_tracks(playlist_id, offset=offset)
+    offset = 0      # use offset to iterate through playlists with more than 100 songs
+    playlist = sp.playlist_tracks(playlist_id, offset=offset)   # can only fetch 100 songs at a time
 
     while (len(playlist['items']) != 0):
         # iterate through playlist in segments of <= 100
@@ -35,15 +30,11 @@ def get_playlist_info(playlist_id, max=float('inf')):
                                   'id': current['id'],
                                   'preview': current['preview_url'],
                                   'playlist': playlist_id})
-            if current['preview_url']:
-                counter+=1
-            if counter >= max:
-                return playlist_info
         offset += len(playlist['items'])    # checks next set of songs
-        playlist = sp.playlist_tracks(playlist_id, offset=offset)
+        playlist = sp.playlist_tracks(playlist_id, offset=offset)   # update offset
     return playlist_info
 
-#downloads audio as mp3
+#downloads audio as wav file
 def download_track(track):
     # store in folder named Audio
     if not os.path.exists('Audio'):
@@ -82,10 +73,12 @@ def download_track(track):
                 saveName = saveName.replace('*', '')
                 saveName = saveName.replace('|', '')
 
+                # save mp3, convert to wav, delete mp3
                 open(saveName, 'wb').write(thisSample.content)
                 convert_me = AudioSegment.from_mp3(saveName)
                 convert_me.export(saveName.replace(".mp3", ".wav"),
                                   format="wav")
+                os.remove(saveName)
                 # add to database
                 success = 1
         except:
@@ -96,11 +89,16 @@ def download_track(track):
     return output
 
 # downloads entire playlist given playlist ID
-def download_playlist(playlist_ID):
+def download_playlist(playlist_ID, max=float('inf')):
     playlist = get_playlist_info(playlist_ID)
+    counter = 0
     for song in playlist:
-        print(download_track(song))
-#%%
+        id, downloaded = download_track(song)
+        print(id, downloaded)
+        counter += downloaded
+        if counter >= max:
+            break
+
 playlists = {'pop':"37i9dQZF1DX0kbJZpiYdZl",        # Hot Hits USA
              'blues':"37i9dQZF1DXd9rSDyQguIk",      # Blues Classics
              'classical':"37i9dQZF1DWWEJlAGA9gs0",  # Classical Essentials
@@ -112,23 +110,16 @@ playlists = {'pop':"37i9dQZF1DX0kbJZpiYdZl",        # Hot Hits USA
              'reggae':"37i9dQZF1DWSiyIBdVQrkk",     # One Love
              'rock':"37i9dQZF1DWXRqgorJj26U"}       # Rock Classics
 
-for playlist, id in playlists.items():
-    songs = get_playlist_info(id, max=50)
+# loops through all playlists and downloads MAX number of songs with preview
+for playlist, song_id in playlists.items():
+    # max=float('inf')
+    max = 50
+    songs = get_playlist_info(song_id)
+    counter = 0
     for song in songs:
         song['playlist'] = playlist
-        print(download_track(song))
-
-#%%
-# import pandas as pd
-# import numpy as np
-# import librosa
-# ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-# genres = list(os.listdir(f'{ROOT_DIR}/Audio/'))
-#
-# y, sr = librosa.load(f'{ROOT_DIR}/Audio/{genres[0]}/Freddie_King_Stumble_0RTjFVHvqjTdpX2NawwyXI.mp3')
-# print('y:', y, '\n')
-# print('y shape:', np.shape(y), '\n')
-# print('Sample Rate (KHz):', sr, '\n')
-#
-# # Verify length of the audio
-# print('Check Len of Audio:', 661794/22050)
+        id, downloaded = download_track(song)
+        counter += downloaded
+        print(id, downloaded)
+        if counter >= max:
+            break
