@@ -4,6 +4,7 @@ import env
 import os
 import time
 import random
+import re
 import requests
 from pydub import AudioSegment
 
@@ -56,22 +57,10 @@ def download_track(track):
         try:
             thisSample = requests.get(thisUrl)
             if len(thisSample.content) > 0:
+
+                saveName = 'Audio/' + thisFolder + '/' + thisArtist + "_" + thisName + "_" + thisID
                 # Clean up filename
-                thisName = thisName.replace('/', '')
-                thisName = thisName.replace('\\', '')
-                thisName = thisName.replace('.', '')
-                saveName = 'Audio/' + thisFolder + '/' + thisArtist + "_" + thisName + "_" + thisID + '.mp3'
-                saveName = saveName.replace(" ", "_")
-                saveName = saveName.replace(":", "")
-                saveName = saveName.replace("!", "")
-                saveName = saveName.replace('"', '')
-                saveName = saveName.replace('-', '')
-                saveName = saveName.replace('?', '')
-                saveName = saveName.replace('<', '')
-                saveName = saveName.replace('>', '')
-                saveName = saveName.replace('\\', '')
-                saveName = saveName.replace('*', '')
-                saveName = saveName.replace('|', '')
+                saveName = re.sub(r'[^0-9a-zA-Z\_/]+', '', saveName) + '.mp3'
 
                 # save mp3, convert to wav, delete mp3
                 open(saveName, 'wb').write(thisSample.content)
