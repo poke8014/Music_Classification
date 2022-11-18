@@ -38,8 +38,8 @@ def get_playlist_info(playlist_id):
 #downloads audio as wav file
 def download_track(track):
     # store in folder named Audio
-    if not os.path.exists('Audio'):
-        os.makedirs('Audio')
+    if not os.path.exists('../Audio'):
+        os.makedirs('../Audio')
 
     thisName = track['name']
     thisArtist = track['artist']

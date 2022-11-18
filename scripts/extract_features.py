@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import numpy as np
 import librosa
 import re
@@ -49,16 +48,16 @@ def make_header():
               'perceptr']
     header.append('tempo')
     for label in labels:
-        header.extend([f'{label} mean', f'{label} var'])
+        header.extend([f'{label}_mean', f'{label}_var'])
     for i in range(1, 21):
-        header.append(f'mfcc{i}')
+        header.extend(f'mfcc{i}_mean', f'mfcc{i}_var')
     header.append('label')
 
     return header
 
 # extracts features from all songs in Audio folder and returns a csv file
 def extract():
-    file = open('spotify_features_sec.csv', 'w', newline='')
+    file = open(f'../spotify_features_{preview_length}sec.csv', 'w', newline='')
     header = make_header()
     with file:
         writer = csv.writer(file)
